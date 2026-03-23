@@ -13,24 +13,8 @@ import {
 
 const PORT = process.env.PORT || 3001;
 
-// Support multiple origins via comma-separated CLIENT_URL
-// e.g. CLIENT_URL=https://drawbattle.vercel.app,https://drawbattle-git-main.vercel.app
-const CLIENT_URL = process.env.CLIENT_URL || "http://localhost:5173";
-const allowedOrigins = CLIENT_URL.split(",").map(s => s.trim());
-
-function corsOrigin(origin, callback) {
-  // Allow requests with no origin (mobile apps, curl, etc.)
-  if (!origin) return callback(null, true);
-  if (allowedOrigins.includes(origin) || allowedOrigins.includes("*")) {
-    return callback(null, true);
-  }
-  // In production, be strict. In dev, allow all.
-  if (process.env.NODE_ENV !== "production") return callback(null, true);
-  callback(new Error("Not allowed by CORS"));
-}
-
 const app = express();
-app.use(cors({ origin: corsOrigin }));
+app.use(cors());
 app.use(express.json());
 
 // Health check
@@ -39,10 +23,9 @@ app.get("/health", (_req, res) => res.json({ status: "ok", uptime: process.uptim
 const httpServer = createServer(app);
 const io = new Server(httpServer, {
   cors: {
-    origin: corsOrigin,
+    origin: "*",
     methods: ["GET", "POST"],
   },
-  // Render free tier can be slow to wake — increase timeouts
   pingTimeout: 60000,
   pingInterval: 25000,
 });
@@ -109,7 +92,6 @@ io.on("connection", (socket) => {
 
   // ─── Drawing ──────────────────────────────────────────────────
   socket.on("draw-stroke", ({ code, stroke }) => {
-    // Relay drawing strokes to all others in room (spectators + players)
     socket.to(code).emit("draw-stroke", {
       playerId: socket.id,
       stroke,
@@ -145,9 +127,8 @@ io.on("connection", (socket) => {
   // ─── Disconnect ───────────────────────────────────────────────
   socket.on("disconnect", () => {
     console.log(`[disconnect] ${socket.id}`);
-    // Find and remove from all rooms this socket was in
     for (const roomCode of socket.rooms) {
-      if (roomCode === socket.id) continue; // skip default room
+      if (roomCode === socket.id) continue;
       const room = removePlayer(roomCode, socket.id);
       if (room) {
         io.to(roomCode).emit("player-left", {
@@ -159,8 +140,6 @@ io.on("connection", (socket) => {
     io.emit("rooms-updated", listRooms());
   });
 });
-
-
 
 httpServer.listen(PORT, () => {
   console.log(`🎮 DrawBattle server running on port ${PORT}`);
