@@ -82,20 +82,21 @@ export function preprocessCanvas(canvas) {
     offscreen.height = SIZE;
     const ctx = offscreen.getContext("2d");
 
-    // Black background — QuickDraw models expect white strokes on black
+    // Black background — white strokes (matches the Python blackboard approach)
     ctx.fillStyle = "#000000";
     ctx.fillRect(0, 0, SIZE, SIZE);
     ctx.drawImage(canvas, 0, 0, SIZE, SIZE);
 
     const imageData = ctx.getImageData(0, 0, SIZE, SIZE);
 
-    // Convert to grayscale tensor, normalized [0, 1]
+    // Convert to grayscale — keep raw 0-255 range as float32 (NOT normalized)
+    // This matches the Python reference: img = np.array(img, dtype=np.float32)
     const data = new Float32Array(SIZE * SIZE);
     for (let i = 0; i < SIZE * SIZE; i++) {
       const r = imageData.data[i * 4];
       const g = imageData.data[i * 4 + 1];
       const b = imageData.data[i * 4 + 2];
-      data[i] = (0.299 * r + 0.587 * g + 0.114 * b) / 255.0;
+      data[i] = 0.299 * r + 0.587 * g + 0.114 * b; // grayscale, 0-255
     }
 
     return tf.tensor4d(data, [1, SIZE, SIZE, 1]);
