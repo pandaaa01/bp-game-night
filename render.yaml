@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: drawbattle-server
+    runtime: node
+    plan: free
+    rootDir: server
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: CLIENT_URL
+        sync: false  # Set this manually to your Vercel URL after deploying frontend
