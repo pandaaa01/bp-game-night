@@ -90,9 +90,13 @@ const Canvas = forwardRef(function Canvas({ socket, roomCode, disabled }, ref) {
 
     // Emit stroke to server
     if (socket && roomCode) {
+      const rect = canvasRef.current.getBoundingClientRect();
       socket.emit("draw-stroke", {
         code: roomCode,
-        stroke: { from, to: point, color: brushColor, size: brushSize },
+        stroke: {
+          from, to: point, color: brushColor, size: brushSize,
+          canvasWidth: rect.width, canvasHeight: rect.height,
+        },
       });
     }
 
