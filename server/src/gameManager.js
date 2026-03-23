@@ -89,7 +89,7 @@ export function submitScore(code, playerId, label, confidence) {
 
   const word = room.gameState.currentWord;
 
-  if (label.toLowerCase() === word.toLowerCase() && confidence >= 0.80) {
+  if (label.toLowerCase() === word.toLowerCase() && confidence >= 0.50) {
     room.gameState.scoredThisRound.add(playerId);
     const player = room.players.get(playerId);
     const points = calculateTimeScore(room.gameState.roundStartTime, room.gameState.roundDuration);
