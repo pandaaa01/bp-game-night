@@ -31,9 +31,18 @@ function corsOrigin(origin, callback) {
 
 import path from "path";
 import { fileURLToPath } from "url";
+import fs from "fs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const clientDist = path.join(__dirname, "../../client/dist");
+
+// Try multiple possible paths for the client dist folder
+const possiblePaths = [
+  path.join(__dirname, "../../client/dist"),     // from server/src/ → client/dist
+  path.join(process.cwd(), "../client/dist"),     // from server/ → client/dist
+  path.join(process.cwd(), "client/dist"),        // from repo root → client/dist
+];
+const clientDist = possiblePaths.find(p => fs.existsSync(p)) || possiblePaths[0];
+console.log(`[static] Serving frontend from: ${clientDist} (exists: ${fs.existsSync(clientDist)})`);
 
 const app = express();
 app.use(cors({ origin: corsOrigin }));
