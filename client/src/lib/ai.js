@@ -96,7 +96,7 @@ export function preprocessCanvas(canvas) {
       const r = imageData.data[i * 4];
       const g = imageData.data[i * 4 + 1];
       const b = imageData.data[i * 4 + 2];
-      data[i] = 0.299 * r + 0.587 * g + 0.114 * b; // grayscale, 0-255
+      data[i] = (0.299 * r + 0.587 * g + 0.114 * b) / 255.0; // normalized 0-1 (training uses /255)
     }
 
     return tf.tensor4d(data, [1, SIZE, SIZE, 1]);
