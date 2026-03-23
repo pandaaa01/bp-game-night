@@ -20,7 +20,7 @@ export function createRoom(hostId, hostName) {
       status: "waiting",  // waiting | playing | between-rounds
       currentWord: null,
       roundNumber: 0,
-      roundDuration: 45,
+      roundDuration: 60,  // 60 seconds per round
       roundStartTime: null,
       roundTimer: null,
       scoredThisRound: new Set(),
@@ -28,7 +28,8 @@ export function createRoom(hostId, hostName) {
     },
     createdAt: Date.now(),
   };
-  room.players.set(hostId, { id: hostId, name: hostName, score: 0, connected: true });
+  // Host is a spectator — they can view all drawings but don't draw
+  room.spectators.set(hostId, { id: hostId, name: hostName, connected: true });
   rooms.set(code, room);
   return room;
 }
@@ -38,6 +39,7 @@ export function joinRoom(code, playerId, playerName) {
   if (!room) return { error: "Room not found" };
   if (room.players.size >= MAX_PLAYERS) return { error: "Room is full (max 15 players)" };
   if (room.players.has(playerId)) return { error: "Already in room" };
+  if (room.spectators.has(playerId)) return { error: "Already in room as spectator" };
 
   room.players.set(playerId, { id: playerId, name: playerName, score: 0, connected: true });
   return { room };
@@ -81,7 +83,6 @@ export function reconnectPlayer(code, socketId, playerName) {
   const room = rooms.get(code);
   if (!room) return null;
 
-  // Find by name if socket ID changed
   for (const [id, player] of room.players) {
     if (player.name === playerName && !player.connected) {
       room.players.delete(id);

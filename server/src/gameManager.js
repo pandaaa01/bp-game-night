@@ -16,7 +16,7 @@ export function startRound(code, io) {
   room.gameState.usedWords.push(word);
 
   // Reset used words if we've gone through all of them
-  if (room.gameState.usedWords.length >= 18) {
+  if (room.gameState.usedWords.length >= 13) {
     room.gameState.usedWords = [word];
   }
 
@@ -57,13 +57,27 @@ export function endRound(code, io) {
   setTimeout(() => {
     const r = getRoom(code);
     if (r && r.gameState.status === "between-rounds") {
-      // Only start if there are connected players
       const connectedPlayers = [...r.players.values()].filter(p => p.connected);
       if (connectedPlayers.length >= 1) {
         startRound(code, io);
       }
     }
   }, BETWEEN_ROUND_DELAY);
+}
+
+/**
+ * Time-based scoring: faster correct answers earn more points.
+ * - At 0s elapsed:  100 points (instant recognition)
+ * - At 60s elapsed:  10 points (just barely in time)
+ * - Linear interpolation between them
+ */
+function calculateTimeScore(roundStartTime, roundDuration) {
+  const elapsed = (Date.now() - roundStartTime) / 1000; // seconds
+  const fraction = Math.min(elapsed / roundDuration, 1);
+  const MAX_SCORE = 100;
+  const MIN_SCORE = 10;
+  const score = Math.round(MAX_SCORE - (MAX_SCORE - MIN_SCORE) * fraction);
+  return Math.max(MIN_SCORE, score);
 }
 
 export function submitScore(code, playerId, label, confidence) {
@@ -78,8 +92,9 @@ export function submitScore(code, playerId, label, confidence) {
   if (label.toLowerCase() === word.toLowerCase() && confidence >= 0.80) {
     room.gameState.scoredThisRound.add(playerId);
     const player = room.players.get(playerId);
-    player.score += 1;
-    return { success: true, scored: true, label, confidence, playerScore: player.score };
+    const points = calculateTimeScore(room.gameState.roundStartTime, room.gameState.roundDuration);
+    player.score += points;
+    return { success: true, scored: true, label, confidence, points, playerScore: player.score };
   }
 
   return { success: true, scored: false, label, confidence };

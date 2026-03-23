@@ -22,7 +22,7 @@ export default function Lobby({ socket, onJoinRoom }) {
     socket.emit("create-room", { playerName: playerName.trim() }, (res) => {
       setLoading(false);
       if (res.success) {
-        onJoinRoom(res.room, "player");
+        onJoinRoom(res.room, "spectator"); // Host is spectator — views all drawings
       } else {
         setError(res.error || "Failed to create room");
       }

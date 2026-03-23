@@ -162,7 +162,7 @@ export default function Game({ socket, room: initialRoom, role, onLeave }) {
           if (res.scored) {
             setHasScored(true);
             addAiMessage(
-              `${getRandomSuccessMessage()} (${result.label} @ ${(result.confidence * 100).toFixed(0)}%)`,
+              `${getRandomSuccessMessage()} +${res.points} pts! (${result.label} @ ${(result.confidence * 100).toFixed(0)}%)`,
               "success"
             );
           } else {
@@ -210,11 +210,11 @@ export default function Game({ socket, room: initialRoom, role, onLeave }) {
         <div className="game-word">
           {currentWord ? (
             <>
-              <div className="label">Draw this</div>
+              <div className="label">{isPlayer ? "Draw this" : "Word"}</div>
               <div className="word">{currentWord}</div>
             </>
           ) : (
-            <div className="label">{gameStatus === "waiting" ? "Waiting to start..." : "Next round starting..."}</div>
+            <div className="label">{gameStatus === "waiting" ? "WAITING TO START..." : "Next round starting..."}</div>
           )}
         </div>
         <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
