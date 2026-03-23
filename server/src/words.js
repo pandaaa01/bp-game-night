@@ -1,25 +1,20 @@
-// Word list — must match the AI model's trained labels exactly
+// Word list — must match the AI model's trained labels exactly (alphabetical order)
 export const WORDS = [
-  "cat",
-  "dog",
-  "house",
-  "car",
-  "tree",
-  "fish",
-  "bird",
-  "star",
-  "sun",
-  "moon",
-  "flower",
   "apple",
-  "boat",
-  "hat",
-  "shoe",
-  "clock",
-  "key",
-  "book",
-  "cup",
-  "heart"
+  "bowtie",
+  "candle",
+  "door",
+  "envelope",
+  "fish",
+  "guitar",
+  "ice cream",
+  "lightning",
+  "moon",
+  "mountain",
+  "star",
+  "tent",
+  "toothbrush",
+  "wristwatch"
 ];
 
 export function getRandomWord(exclude = []) {

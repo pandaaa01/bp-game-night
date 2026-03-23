@@ -1,11 +1,10 @@
 import * as tf from "@tensorflow/tfjs";
 
-// Labels that match the server word list and model output order
+// Labels that match the model output order (alphabetical, matching training)
 export const LABELS = [
-  "apple", "bird", "boat", "book", "car",
-  "cat", "clock", "cup", "dog", "fish",
-  "flower", "hat", "heart", "house", "key",
-  "moon", "shoe", "star", "sun", "tree"
+  "apple", "bowtie", "candle", "door", "envelope",
+  "fish", "guitar", "ice cream", "lightning", "moon",
+  "mountain", "star", "tent", "toothbrush", "wristwatch"
 ];
 
 let model = null;
@@ -18,7 +17,6 @@ let modelLoading = false;
 export async function loadModel() {
   if (model) return model;
   if (modelLoading) {
-    // Wait for the other loading call
     while (modelLoading) await new Promise(r => setTimeout(r, 100));
     return model;
   }
@@ -26,7 +24,7 @@ export async function loadModel() {
   modelLoading = true;
   try {
     model = await tf.loadLayersModel("/model/model.json");
-    console.log("[AI] Model loaded successfully");
+    console.log("[AI] Real model loaded successfully!");
   } catch (err) {
     console.warn("[AI] Could not load model, using mock mode:", err.message);
     model = createMockModel();
@@ -37,13 +35,11 @@ export async function loadModel() {
 
 /**
  * Create a mock model that returns believable predictions
- * This lets the game work before a real model is trained
  */
 function createMockModel() {
   return {
     predict: (tensor) => {
       const batchSize = tensor.shape[0];
-      // Generate random-ish predictions
       const data = new Float32Array(batchSize * LABELS.length);
       for (let b = 0; b < batchSize; b++) {
         let sum = 0;
@@ -51,11 +47,9 @@ function createMockModel() {
           data[b * LABELS.length + i] = Math.random();
           sum += data[b * LABELS.length + i];
         }
-        // Normalize to sum=1 (softmax-like)
         for (let i = 0; i < LABELS.length; i++) {
           data[b * LABELS.length + i] /= sum;
         }
-        // Sometimes boost one class to simulate recognition
         if (Math.random() > 0.6) {
           const boostIdx = Math.floor(Math.random() * LABELS.length);
           const boostVal = 0.7 + Math.random() * 0.25;
@@ -76,36 +70,35 @@ function createMockModel() {
 /**
  * Preprocess a canvas element for inference:
  * 1. Capture as ImageData
- * 2. Resize to 64×64
+ * 2. Resize to 28×28 (model input size)
  * 3. Convert to grayscale + normalize [0,1]
- * 4. Return as 4D tensor [1, 64, 64, 1]
+ * 4. Return as 4D tensor [1, 28, 28, 1]
  */
 export function preprocessCanvas(canvas) {
   return tf.tidy(() => {
-    // Create an offscreen canvas at 64×64
+    const SIZE = 28;
     const offscreen = document.createElement("canvas");
-    offscreen.width = 64;
-    offscreen.height = 64;
+    offscreen.width = SIZE;
+    offscreen.height = SIZE;
     const ctx = offscreen.getContext("2d");
 
-    // White background (drawings are on dark bg, we invert)
+    // Black background — QuickDraw models expect white strokes on black
     ctx.fillStyle = "#000000";
-    ctx.fillRect(0, 0, 64, 64);
-    ctx.drawImage(canvas, 0, 0, 64, 64);
+    ctx.fillRect(0, 0, SIZE, SIZE);
+    ctx.drawImage(canvas, 0, 0, SIZE, SIZE);
 
-    const imageData = ctx.getImageData(0, 0, 64, 64);
+    const imageData = ctx.getImageData(0, 0, SIZE, SIZE);
 
-    // Convert to grayscale tensor
-    const data = new Float32Array(64 * 64);
-    for (let i = 0; i < 64 * 64; i++) {
+    // Convert to grayscale tensor, normalized [0, 1]
+    const data = new Float32Array(SIZE * SIZE);
+    for (let i = 0; i < SIZE * SIZE; i++) {
       const r = imageData.data[i * 4];
       const g = imageData.data[i * 4 + 1];
       const b = imageData.data[i * 4 + 2];
-      // Grayscale + normalize
       data[i] = (0.299 * r + 0.587 * g + 0.114 * b) / 255.0;
     }
 
-    return tf.tensor4d(data, [1, 64, 64, 1]);
+    return tf.tensor4d(data, [1, SIZE, SIZE, 1]);
   });
 }
 
