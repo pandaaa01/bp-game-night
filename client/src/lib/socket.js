@@ -1,8 +1,8 @@
 import { io } from "socket.io-client";
 
-// When deployed together (same origin), no URL needed — socket.io connects to window.origin
-// Only set VITE_SERVER_URL if the backend is on a different domain
-const SERVER_URL = import.meta.env.VITE_SERVER_URL || undefined;
+// In production: set VITE_SERVER_URL to your Render backend URL
+// In dev: defaults to localhost:3001
+const SERVER_URL = import.meta.env.VITE_SERVER_URL || "http://localhost:3001";
 
 let socket = null;
 
