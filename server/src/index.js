@@ -29,9 +29,18 @@ function corsOrigin(origin, callback) {
   callback(new Error("Not allowed by CORS"));
 }
 
+import path from "path";
+import { fileURLToPath } from "url";
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const clientDist = path.join(__dirname, "../../client/dist");
+
 const app = express();
 app.use(cors({ origin: corsOrigin }));
 app.use(express.json());
+
+// Serve frontend static files (production)
+app.use(express.static(clientDist));
 
 // Health check
 app.get("/health", (_req, res) => res.json({ status: "ok", uptime: process.uptime() }));
@@ -158,6 +167,11 @@ io.on("connection", (socket) => {
     }
     io.emit("rooms-updated", listRooms());
   });
+});
+
+// SPA fallback — serve index.html for any non-API route
+app.get("*", (_req, res) => {
+  res.sendFile(path.join(clientDist, "index.html"));
 });
 
 httpServer.listen(PORT, () => {
